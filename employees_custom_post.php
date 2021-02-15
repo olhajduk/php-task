@@ -1,62 +1,70 @@
 <?php
-
-add_action('init', 'employees_custom_taxonomy', 0);
-
-function employees_custom_taxonomy()
-{
-
-  $labels = array(
-    'name'                => _x('Types', 'taxonomy general name'),
-    'singular_name'       => _x('Type', 'taxonomy singular name'),
-    'search_items'        => __('Search Types'),
-    'all_items'           => __('All Types'),
-    'parent_item'         => __('Parent Type'),
-    'parent_item_colon'   => __('Parent Type:'),
-    'edit_item'           => __('Edit Type'),
-    'update_item'         => __('Update Type'),
-    'add_new_item'        => __('Add New Type'),
-    'new_item_name'       => __('New Type Name'),
-    'menu_name'           => __('Types'),
-  );
-
-  register_taxonomy('types', array('deals'), array(
-    'hierarchical'        => false,
-    'labels'              => $labels,
-    'show_ui'             => true,
-    'show_admin_column'   => true,
-    'query_var'           => true,
-    'rewrite'             => array('slug' => 'type'),
-  ));
-}
-
-
+// Create a custom post type
 function employees_custom_post_type()
 {
 
+  // Set labels for custom post type
   $labels = array(
-    'name'                => __('Employees'),
-    'singular_name'       => __('Name'),
-    'salary'              => __('Salary')
+    'name' => 'Employee',
+    'singular_name' => 'Name',
+    'salary'    => 'Salary'
   );
 
+  // Set Options for this custom post type
   $args = array(
-    'label'               => $labels['name'],
-    'labels'              => $labels,
-    'supports'            => array('title', 'editor', 'excerpt', 'author', 'thumbnail', 'revisions', 'custom-fields'),
-    'public'              => false,
-    'hierarchical'        => false,
-    'show_ui'             => true,
-    'show_in_menu'        => true,
-    'show_in_admin_bar'   => true,
-    'has_archive'         => true,
-    'can_export'          => true,
-    'exclude_from_search' => true,
-    'taxonomies'          => array('post_tag'),
-    'publicly_queryable'  => false,
-    'capability_type'     => 'page'
+    'public'          => true,
+    'label'           => 'Employee',
+    'labels'          => $labels,
+    'supports'        => array('title', 'editor'),
+    'capability_type' => 'page',
   );
 
-  register_post_type('employees', $args);
+  register_post_type('employee', $args);
 }
 
-add_action('init', 'employees_custom_post_type', 0);
+add_action('init', 'employees_custom_post_type');
+// Custom Post Type ends here
+
+// Create Shortcode to Display Employees Post Types
+// Should be into your theme’s functions.php
+function shortcode_employees_custom_post_type()
+{
+
+  $args = array(
+    'post_type'       => 'employee',
+    'posts_per_page'  => '15',
+    'publish_status'  => 'published',
+    'order'           => 'ASC',
+    'order_by'        => 'meta_value',
+    'meta_key'        => 'date_from',
+    'meta_query'      => array(
+      array(
+        'key'         => 'date_from',
+        'value'       => date('Ymd'),
+        'compare'     => '>='
+      ),
+    ),
+  );
+
+  $query = new WP_Query($args);
+  $result = '';
+
+  if ($query->have_posts()) :
+    while ($query->have_posts()) : $query->the_post();
+
+      $result .= '
+      <div class="employee-item">
+        <div class="employee-name">' . get_the_title() . '</div>
+        <div class="employee-salary">' . get_the_content() . '</div>
+      </div>
+      ';
+
+    endwhile;
+    wp_reset_postdata();
+  endif;
+
+  return $result;
+}
+
+add_shortcode('employees', 'shortcode_employees_custom_post_type'); 
+// Shortcode code ends here
